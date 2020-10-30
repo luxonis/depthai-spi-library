@@ -57,7 +57,6 @@ uint32_t read_uint32(uint8_t* currPtr){
 
 
 void spi_send_command(SpiProtocolPacket* spiPacket, spi_command command, uint8_t stream_name_len, char* stream_name){
-    char sendPayload[SPI_PROTOCOL_PAYLOAD_SIZE] = {0};
     SpiCmdMessage spi_message;
 
     assert(stream_name_len <= MAX_STREAMNAME);
@@ -68,7 +67,7 @@ void spi_send_command(SpiProtocolPacket* spiPacket, spi_command command, uint8_t
     printf("%d %s\n", strlen(stream_name), stream_name);
     strncpy(spi_message.stream_name, stream_name, stream_name_len);
 
-    spi_protocol_write_packet(spiPacket, &spi_message, spi_message.total_size);
+    spi_protocol_write_packet(spiPacket, (uint8_t*) &spi_message, spi_message.total_size);
 }
 
 void spi_parse_command(SpiCmdMessage* parsed_message, uint8_t* data){
@@ -86,9 +85,8 @@ void spi_parse_command(SpiCmdMessage* parsed_message, uint8_t* data){
     currPtr++;
 
     // read streamName - up to 16 bytes
+    assert(parsed_message->stream_name_len <= MAX_STREAMNAME);
     memcpy(parsed_message->stream_name, (char*)currPtr, parsed_message->stream_name_len);
-    // add a \0 after stream_name_len, just in case.
-    parsed_message->stream_name[parsed_message->stream_name_len + 1] = "\0";
 }
 
 void spi_parse_get_size_resp(SpiGetSizeResp* parsedResp, uint8_t* data){
@@ -96,7 +94,7 @@ void spi_parse_get_size_resp(SpiGetSizeResp* parsedResp, uint8_t* data){
 }
 
 void spi_parse_pop_messages_resp(SpiPopMessagesResp* parsedResp, uint8_t* data){
-    parsedResp->status = (uint8_t) data;
+    parsedResp->status = (uint8_t) *data;
 }
 
 void spi_parse_get_streams_resp(SpiGetStreamsResp* parsedResp, uint8_t* data){
