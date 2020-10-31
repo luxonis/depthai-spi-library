@@ -56,7 +56,7 @@ uint32_t read_uint32(uint8_t* currPtr){
 
 
 
-void spi_send_command(SpiProtocolPacket* spiPacket, spi_command command, uint8_t stream_name_len, char* stream_name){
+void spi_generate_command(SpiProtocolPacket* spiPacket, spi_command command, uint8_t stream_name_len, char* stream_name){
     SpiCmdMessage spi_message;
 
     assert(stream_name_len <= MAX_STREAMNAME);
@@ -64,10 +64,12 @@ void spi_send_command(SpiProtocolPacket* spiPacket, spi_command command, uint8_t
     spi_message.total_size = sizeof(spi_message.total_size) + sizeof(command) + sizeof(stream_name_len) + stream_name_len;
     spi_message.cmd = command;
     spi_message.stream_name_len = stream_name_len;
-    printf("%d %s\n", strlen(stream_name), stream_name);
+printf("asdfasdf %d %d %s\n", strlen(stream_name), stream_name_len, stream_name);
     strncpy(spi_message.stream_name, stream_name, stream_name_len);
 
+printf("asdfasdf1");
     spi_protocol_write_packet(spiPacket, (uint8_t*) &spi_message, spi_message.total_size);
+printf("asdfasdf2");
 }
 
 void spi_parse_command(SpiCmdMessage* parsed_message, uint8_t* data){

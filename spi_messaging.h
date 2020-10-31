@@ -47,7 +47,7 @@ typedef struct {
     char stream_names[MAX_STREAMS][MAX_STREAMNAME]; 
 } SpiGetStreamsResp;
 
-void spi_send_command(SpiProtocolPacket* spiPacket, spi_command command, uint8_t streamNameLen, char* streamName);
+void spi_generate_command(SpiProtocolPacket* spiPacket, spi_command command, uint8_t streamNameLen, char* streamName);
 void spi_parse_command(SpiCmdMessage* message, uint8_t* data);
 
 void spi_parse_get_size_resp(SpiGetSizeResp* parsedResp, uint8_t* data);
