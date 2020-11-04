@@ -64,12 +64,9 @@ void spi_generate_command(SpiProtocolPacket* spiPacket, spi_command command, uin
     spi_message.total_size = sizeof(spi_message.total_size) + sizeof(command) + sizeof(stream_name_len) + stream_name_len;
     spi_message.cmd = command;
     spi_message.stream_name_len = stream_name_len;
-printf("asdfasdf %d %d %s\n", strlen(stream_name), stream_name_len, stream_name);
     strncpy(spi_message.stream_name, stream_name, stream_name_len);
 
-printf("asdfasdf1");
     spi_protocol_write_packet(spiPacket, (uint8_t*) &spi_message, spi_message.total_size);
-printf("asdfasdf2");
 }
 
 void spi_parse_command(SpiCmdMessage* parsed_message, uint8_t* data){
@@ -122,4 +119,5 @@ void spi_parse_get_message(SpiGetMessageResp* parsedResp, uint8_t* data, uint32_
     parsedResp->data_size = parsedResp->total_size - parsedResp->metadata_size - 2*sizeof(uint32_t);
 
     parsedResp->metadata = &data[parsedResp->data_size];
+
 }

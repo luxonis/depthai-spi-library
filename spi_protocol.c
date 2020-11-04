@@ -18,11 +18,6 @@
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 
-static const uint8_t START_BYTE_MAGIC = 0b10101010;
-//static const uint8_t END_BYTE_MAGIC = 0b01010101;
-static const uint8_t END_BYTE_MAGIC = 0b00000000; // 0
-
-
 #define STATE_RX_HEADER         (0) // 1B start
 #define STATE_RX_PAYLOAD        (1) // PAYLOAD_SIZE bytes
 #define STATE_RX_TAIL_CRC_0     (2) // LE first byte CRC

@@ -14,8 +14,10 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-
 #define SPI_PROTOCOL_PAYLOAD_SIZE (252)
+
+static const uint8_t START_BYTE_MAGIC = 0b10101010;
+static const uint8_t END_BYTE_MAGIC = 0b00000000;
 
 typedef struct {
     uint8_t start;
