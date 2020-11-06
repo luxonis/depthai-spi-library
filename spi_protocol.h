@@ -63,6 +63,7 @@ SpiProtocolPacket* spi_protocol_parse(SpiProtocolInstance* instance, uint8_t* bu
 * Returns: 0 OK, -1 packet is NULL, -2 payload_buffer is NULL
 */
 int spi_protocol_write_packet(SpiProtocolPacket* packet, uint8_t* payload_buffer, int size);
+int spi_protocol_write_packet2(SpiProtocolPacket* packet, uint8_t* payload_buffer1, uint8_t* payload_buffer2, int size1, int size2);
 
 
 /*
