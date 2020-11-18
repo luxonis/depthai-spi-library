@@ -222,6 +222,44 @@ int spi_protocol_write_packet(SpiProtocolPacket* packet, uint8_t* payload_buffer
 }
 
 /*
+* packet - pointer to SpiProtocolPacket where it will be written
+* payload_buffer1 - Input buffer with payload data
+* payload_buffer2 - Second input buffer with payload data
+* Returns: 0 OK, -1 packet is NULL, -2 payload_buffer is NULL
+*/
+int spi_protocol_write_packet2(SpiProtocolPacket* packet, uint8_t* payload_buffer1, uint8_t* payload_buffer2, int size1, int size2){
+    if(packet == NULL){
+        return SPI_PROTOCOL_PACKET_NULL;
+    }
+    if(payload_buffer1 == NULL){
+        return SPI_PROTOCOL_PAYLOAD_BUFFER_NULL;
+    } 
+    if(payload_buffer2 == NULL){
+        return SPI_PROTOCOL_PAYLOAD_BUFFER_NULL;
+    } 
+    
+    // Start byte
+    packet->start = START_BYTE_MAGIC;
+    
+    // Payload
+    memcpy(packet->data, payload_buffer1, size1);
+    memcpy(packet->data + size1, payload_buffer2, size2);
+    // Zero out the rest of buffer
+    memset(packet->data + size1 + size2, 0, SPI_PROTOCOL_PAYLOAD_SIZE - (size1 + size2));
+
+    uint16_t crc = crc_16(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
+
+    // CRC - little endian 
+    packet->crc[0] = crc & 0xFF;
+    packet->crc[1] = ((crc >> 8) & 0xFF);
+
+    // End byte    
+    packet->end = END_BYTE_MAGIC;
+    
+    return SPI_PROTOCOL_OK;
+}
+
+/*
 * packet - pointer to SpiProtocolPacket where header, crc and tail will be written
 * Returns: 0 OK, -1 packet is NULL
 */

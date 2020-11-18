@@ -25,12 +25,12 @@ uint8_t is_little_endian(){
 uint16_t read_uint16(uint8_t* currPtr){
     uint16_t result = 0;
     if(is_little_endian()){
-        for(int i=0; i<sizeof(uint16_t); i++){
+        for(size_t i=0; i<sizeof(uint16_t); i++){
             result += *currPtr<<(i*8);
             currPtr++;
         }
     } else {
-        for(int i=0; i<sizeof(uint16_t); i++){
+        for(size_t i=0; i<sizeof(uint16_t); i++){
             result += *currPtr<<((sizeof(uint16_t)-i-1)*8);
             currPtr++;
         }
@@ -41,12 +41,12 @@ uint16_t read_uint16(uint8_t* currPtr){
 uint32_t read_uint32(uint8_t* currPtr){
     uint32_t result = 0;
     if(is_little_endian()){
-        for(int i=0; i<sizeof(uint32_t); i++){
+        for(size_t i=0; i<sizeof(uint32_t); i++){
             result += *currPtr<<(i*8);
             currPtr++;
         }
     } else {
-        for(int i=0; i<sizeof(uint32_t); i++){
+        for(size_t i=0; i<sizeof(uint32_t); i++){
             result += *currPtr<<((sizeof(uint32_t)-i-1)*8);
             currPtr++;
         }
