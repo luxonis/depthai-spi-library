@@ -92,7 +92,7 @@ void spi_parse_get_size_resp(SpiGetSizeResp* parsedResp, uint8_t* data){
     parsedResp->size = read_uint32(data);
 }
 
-void spi_parse_pop_messages_resp(SpiPopMessagesResp* parsedResp, uint8_t* data){
+void spi_status_resp(SpiStatusResp* parsedResp, uint8_t* data){
     parsedResp->status = (uint8_t) *data;
 }
 
