@@ -55,8 +55,28 @@ uint32_t read_uint32(uint8_t* currPtr){
 }
 
 
+uint8_t isGetSizeCmd(spi_command cmd){
+    uint8_t result = 0;
+    for(size_t i=0; i<sizeof(GET_SIZE_CMDS); i++){
+        if(cmd == GET_SIZE_CMDS[i]){
+            result = 1;
+        }        
+    }
+    return result;
+}
 
-void spi_generate_command(SpiProtocolPacket* spiPacket, spi_command command, uint8_t stream_name_len, char* stream_name){
+uint8_t isGetMessageCmd(spi_command cmd){
+    uint8_t result = 0;
+    for(size_t i=0; i<sizeof(GET_MESS_CMDS); i++){
+        if(cmd == GET_MESS_CMDS[i]){
+            result = 1;
+        }
+    }
+    return result;
+}
+
+
+void spi_generate_command(SpiProtocolPacket* spiPacket, spi_command command, uint8_t stream_name_len, const char* stream_name){
     SpiCmdMessage spi_message;
 
     assert(stream_name_len <= MAX_STREAMNAME);
@@ -108,16 +128,18 @@ void spi_parse_get_streams_resp(SpiGetStreamsResp* parsedResp, uint8_t* data){
     }
 }
 
-void spi_parse_get_message(SpiGetMessageResp* parsedResp, uint8_t* data, uint32_t total_size){
-    
-    parsedResp->total_size = total_size;
-
-    
-    // Pull two uint32_t off the end of the message. These are the metadata type and size.
-    parsedResp->metadata_size = read_uint32(&data[total_size]-sizeof(uint32_t));
-    parsedResp->metadata_type = read_uint32(&data[total_size]-2*sizeof(uint32_t));
-    parsedResp->data_size = parsedResp->total_size - parsedResp->metadata_size - 2*sizeof(uint32_t);
-
-    parsedResp->metadata = &data[parsedResp->data_size];
-
+void spi_parse_get_message(SpiGetMessageResp* parsedResp, uint32_t size, spi_command get_mess_cmd){
+    switch(get_mess_cmd){
+        case GET_MESSAGE: {
+            parsedResp->data_type = 0;      //currently unused.
+            parsedResp->data_size = size;
+        } break;
+        case GET_METADATA: {
+            parsedResp->data_type = read_uint32(&parsedResp->data[size]-2*sizeof(uint32_t));
+            parsedResp->data_size = read_uint32(&parsedResp->data[size]-sizeof(uint32_t));      // use the size at the end of this message, it chops off the extra bytes for type and message size.
+        } break;
+        default: {
+            printf("Warning: Unsupported spi_command passed to %s.", __func__);
+        }break;
+    }
 }
