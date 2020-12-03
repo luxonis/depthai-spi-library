@@ -57,7 +57,7 @@ uint32_t read_uint32(uint8_t* currPtr){
 
 uint8_t isGetSizeCmd(spi_command cmd){
     uint8_t result = 0;
-    for(size_t i=0; i<sizeof(GET_SIZE_CMDS); i++){
+    for(size_t i=0; i < sizeof(GET_SIZE_CMDS) / sizeof(GET_SIZE_CMDS[0]); i++){
         if(cmd == GET_SIZE_CMDS[i]){
             result = 1;
         }        
@@ -67,7 +67,7 @@ uint8_t isGetSizeCmd(spi_command cmd){
 
 uint8_t isGetMessageCmd(spi_command cmd){
     uint8_t result = 0;
-    for(size_t i=0; i<sizeof(GET_MESS_CMDS); i++){
+    for(size_t i=0; i < sizeof(GET_MESS_CMDS) / sizeof(GET_MESS_CMDS[0]); i++){
         if(cmd == GET_MESS_CMDS[i]){
             result = 1;
         }
