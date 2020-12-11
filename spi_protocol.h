@@ -14,7 +14,12 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+// TODO: get rid of this dupulicate define.
 #define SPI_PROTOCOL_PAYLOAD_SIZE (252)
+
+#define PAYLOAD_MAX_SIZE 252
+#define BUFF_MAX_SIZE 256
+#define SPI_PKT_SIZE 256
 
 static const uint8_t START_BYTE_MAGIC = 0b10101010;
 static const uint8_t END_BYTE_MAGIC = 0b00000000;
