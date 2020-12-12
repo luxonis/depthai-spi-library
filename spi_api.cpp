@@ -28,6 +28,8 @@ void SpiApi::debug_print_char(char * data, int len){
 
 
 SpiApi::SpiApi(){
+    chunk_message_cb = NULL;
+
     spi_proto_instance = (SpiProtocolInstance*) malloc(sizeof(SpiProtocolInstance));
     spi_send_packet = (SpiProtocolPacket*) malloc(sizeof(SpiProtocolPacket));
     spi_protocol_init(spi_proto_instance);
@@ -279,11 +281,116 @@ uint8_t SpiApi::req_metadata(SpiGetMessageResp *get_message_resp, const char* st
     return req_success;
 }
 
+
+
+
+uint8_t SpiApi::req_full_msg(FullMessage* received_msg, const char* stream_name){
+    uint8_t req_success = 0;
+    uint8_t req_data_success = 0;
+    uint8_t req_meta_success = 0;
+
+    // ----------------------------------------
+    // example of receiving messages.
+    // ----------------------------------------
+    // the req_data method allocates memory for the received packet. we need to be sure to free it when we're done with it.
+    req_data_success = req_data(&received_msg->raw_data_resp, stream_name);
+
+    // ----------------------------------------
+    // example of getting message metadata
+    // ----------------------------------------
+    // the req_metadata method allocates memory for the received packet. we need to be sure to free it when we're done with it.
+    req_meta_success = req_metadata(&received_msg->raw_meta_resp, stream_name);
+
+    
+    if(req_data_success && req_meta_success){
+        req_success = 1;
 /*
-struct full_message{
-    SpiGetMessageResp* data_resp;
-    SpiGetMessageResp* meta_resp;
+        // ----------------------------------------
+        // example of parsing out basic ImgDetection type.
+        // ----------------------------------------
+        switch ((dai::DatatypeEnum) get_meta_resp.data_type)
+        {
+        case dai::DatatypeEnum::ImgDetections :
+        {
+            dai::RawImgDetections det;
+            dai::parseMessage(get_meta_resp.data, get_meta_resp.data_size, det);
+
+            for(const auto& det : det.detections){
+                printf("label: %d, xmin: %f, ymin: %f, xmax: %f, ymax: %f\n", det.label, det.xmin, det.ymin, det.xmax, det.ymax);
+            }
+        }
+        break;
+        
+        default:
+            break;
+        }
+*/
+    }
+
+    return req_success;
 }
 
-req_full_msg();
-*/
+void SpiApi::free_full_msg(FullMessage* received_msg){
+    free(received_msg->raw_data_resp.data);
+    free(received_msg->raw_meta_resp.data);
+}
+
+
+
+void SpiApi::set_chunk_packet_cb(void (*passed_chunk_message_cb)(char*, uint32_t, uint32_t)){
+    chunk_message_cb = passed_chunk_message_cb;
+}
+
+void SpiApi::chunk_message(const char* stream_name){
+    uint8_t req_success = 0;
+
+    // do a get_size before trying to retreive message.
+    SpiGetSizeResp get_size_resp;
+    req_success = spi_get_size(&get_size_resp, GET_SIZE, stream_name);
+    debug_cmd_print("get_size_resp: %d\n", get_size_resp.size);
+
+    if(req_success){
+        // send a get message command (assuming we got size)
+        spi_generate_command(spi_send_packet, GET_MESSAGE, strlen(stream_name)+1, stream_name);
+        generic_send_spi((char *)spi_send_packet);
+
+        uint32_t message_size = get_size_resp.size;
+        uint32_t total_recv = 0;
+        while(total_recv < message_size){
+            char recvbuf[BUFF_MAX_SIZE] = {0};
+            req_success = generic_recv_spi(recvbuf);
+            if(req_success){
+                if(recvbuf[0]==START_BYTE_MAGIC){
+                    SpiProtocolPacket* spiRecvPacket = spi_protocol_parse(spi_proto_instance, (uint8_t*)recvbuf, sizeof(recvbuf));
+                    uint32_t remaining_data = message_size-total_recv;
+                    uint32_t curr_packet_size = 0;
+                    if ( remaining_data < PAYLOAD_MAX_SIZE ){
+                        curr_packet_size = remaining_data;
+                    } else {
+                        curr_packet_size = PAYLOAD_MAX_SIZE;
+                    }
+
+                    if(chunk_message_cb != NULL){
+                        chunk_message_cb((char*)spiRecvPacket->data, curr_packet_size, message_size);
+                        if(DEBUG_MESSAGE_CONTENTS){
+                            debug_print_hex((uint8_t*)spiRecvPacket->data, curr_packet_size);
+                        }
+                    } else {
+                        printf("WARNING: chunk_message called without setting callback!");
+                    }
+                    total_recv += curr_packet_size;
+
+                }else if(recvbuf[0] != 0x00){
+                    printf("*************************************** got a half/non aa packet ************************************************\n");
+                    req_success = 0;
+                    break;
+                }
+            } else {
+                printf("failed to recv packet\n");
+                req_success = 0;
+                break;
+            }
+        }
+    }
+}
+
