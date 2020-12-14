@@ -304,27 +304,6 @@ uint8_t SpiApi::req_full_msg(FullMessage* received_msg, const char* stream_name)
     
     if(req_data_success && req_meta_success){
         req_success = 1;
-/*
-        // ----------------------------------------
-        // example of parsing out basic ImgDetection type.
-        // ----------------------------------------
-        switch ((dai::DatatypeEnum) get_meta_resp.data_type)
-        {
-        case dai::DatatypeEnum::ImgDetections :
-        {
-            dai::RawImgDetections det;
-            dai::parseMessage(get_meta_resp.data, get_meta_resp.data_size, det);
-
-            for(const auto& det : det.detections){
-                printf("label: %d, xmin: %f, ymin: %f, xmax: %f, ymax: %f\n", det.label, det.xmin, det.ymin, det.xmax, det.ymax);
-            }
-        }
-        break;
-        
-        default:
-            break;
-        }
-*/
     }
 
     return req_success;
@@ -335,6 +314,27 @@ void SpiApi::free_full_msg(FullMessage* received_msg){
     free(received_msg->raw_meta_resp.data);
 }
 
+void SpiApi::parse_metadata(SpiGetMessageResp *raw_meta_resp){
+    // ----------------------------------------
+    // example of parsing out basic ImgDetection type.
+    // ----------------------------------------
+    switch ((dai::DatatypeEnum) raw_meta_resp->data_type)
+    {
+    case dai::DatatypeEnum::ImgDetections :
+    {
+        dai::RawImgDetections det;
+        dai::parseMessage(raw_meta_resp->data, raw_meta_resp->data_size, det);
+
+        for(const auto& det : det.detections){
+            printf("label: %d, xmin: %f, ymin: %f, xmax: %f, ymax: %f\n", det.label, det.xmin, det.ymin, det.xmax, det.ymax);
+        }
+    }
+    break;
+    
+    default:
+        break;
+    }
+}
 
 
 void SpiApi::set_chunk_packet_cb(void (*passed_chunk_message_cb)(char*, uint32_t, uint32_t)){

@@ -62,6 +62,8 @@ class SpiApi {
         uint8_t req_full_msg(FullMessage* received_msg, const char* stream_name);
         void free_full_msg(FullMessage* received_msg);
 
+
+        void parse_metadata(SpiGetMessageResp *raw_meta_resp);
         void chunk_message(const char* stream_name);
         void set_chunk_packet_cb(void (*passed_chunk_message_cb)(char*, uint32_t, uint32_t));
 };
