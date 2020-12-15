@@ -19,11 +19,22 @@
 static const char* NOSTREAM = "";
 
 typedef struct {
-    SpiGetMessageResp raw_data_resp;
-    SpiGetMessageResp raw_meta_resp;
-    dai::DatatypeEnum metatype;
-    void* parsed_meta;
-} FullMessage;
+    uint32_t size;
+    uint8_t* data;
+} Data;
+
+typedef struct {
+    uint32_t size;
+    uint8_t* data;
+    dai::DatatypeEnum type;
+} Metadata;
+
+typedef struct {
+    Data raw_data;
+    Metadata raw_meta;
+    dai::DatatypeEnum type;     // exposing type here as well, for easier access.
+} Message;
+
 
 class SpiApi {
     private:
@@ -35,6 +46,10 @@ class SpiApi {
         SpiProtocolInstance* spi_proto_instance;
         SpiProtocolPacket* spi_send_packet;
 
+        uint8_t generic_send_spi(char* spi_send_packet);
+        uint8_t generic_recv_spi(char* recvbuf);
+        uint8_t spi_get_size(SpiGetSizeResp *response, spi_command get_size_cmd, const char * stream_name);
+        uint8_t spi_get_message(SpiGetMessageResp *response, spi_command get_mess_cmd, const char * stream_name, uint32_t size);
     public:
         SpiApi();
         ~SpiApi();
@@ -46,27 +61,32 @@ class SpiApi {
         // refs to callbacks
         void set_send_spi_impl(uint8_t (*passed_send_spi)(char*));
         void set_recv_spi_impl(uint8_t (*passed_recv_spi)(char*));
-        uint8_t generic_send_spi(char* spi_send_packet);
-        uint8_t generic_recv_spi(char* recvbuf);
 
-        // base SPI command methods
-        uint8_t spi_get_size(SpiGetSizeResp *response, spi_command get_size_cmd, const char * stream_name);
-        uint8_t spi_get_message(SpiGetMessageResp *response, spi_command get_mess_cmd, const char * stream_name, uint32_t size);
+        // base SPI API methods
+        std::vector<std::string> spi_get_streams();
         uint8_t spi_pop_messages();
-        uint8_t spi_get_streams(SpiGetStreamsResp *response);
         uint8_t spi_pop_message(const char * stream_name);
-        
-        uint8_t req_data(SpiGetMessageResp *get_message_resp, const char* stream_name);
-        uint8_t req_metadata(SpiGetMessageResp *get_message_resp, const char* stream_name);
+        uint8_t req_message(Message* received_msg, const char* stream_name);
+        void free_message(Message* received_msg);
 
-        uint8_t req_full_msg(FullMessage* received_msg, const char* stream_name);
-        void free_full_msg(FullMessage* received_msg);
+        // methods for requesting only metadata or data
+        uint8_t req_data(Data *requested_data, const char* stream_name);
+        uint8_t req_metadata(Metadata *requested_data, const char* stream_name);
 
 
-        void parse_metadata(SpiGetMessageResp *raw_meta_resp);
+        template<typename TYPE>
+        void parse_metadata(Metadata *passed_metadata, TYPE& parsed_return);
+
+        // methods for receiving a large message piece by piece
         void chunk_message(const char* stream_name);
         void set_chunk_packet_cb(void (*passed_chunk_message_cb)(char*, uint32_t, uint32_t));
 };
+
+
+template<typename T>
+void SpiApi::parse_metadata(Metadata *passed_metadata, T& parsed_return){
+    dai::parseMessage(passed_metadata->data, passed_metadata->size, parsed_return);
+}
 
 
 

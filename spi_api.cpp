@@ -56,8 +56,6 @@ uint8_t SpiApi::generic_recv_spi(char* recvbuf){
     return (*recv_spi_impl)(recvbuf);
 }
 
-
-
 uint8_t SpiApi::spi_get_size(SpiGetSizeResp *response, spi_command get_size_cmd, const char * stream_name){
     assert(isGetSizeCmd(get_size_cmd));
 
@@ -144,6 +142,13 @@ uint8_t SpiApi::spi_get_message(SpiGetMessageResp *response, spi_command get_mes
     return success;
 }
 
+
+
+
+
+
+
+
 uint8_t SpiApi::spi_pop_messages(){
     SpiStatusResp response;
     uint8_t success = 0;
@@ -163,34 +168,6 @@ uint8_t SpiApi::spi_pop_messages(){
             if(response.status == SPI_MSG_SUCCESS_RESP){
                 success = 1;
             }
-            
-        }else if(recvbuf[0] != 0x00){
-            printf("*************************************** got a half/non aa packet ************************************************\n");
-            success = 0;
-        }
-    } else {
-        printf("failed to recv packet\n");
-        success = 0;
-    }
-
-    return success;
-}
-
-uint8_t SpiApi::spi_get_streams(SpiGetStreamsResp *response){
-    uint8_t success = 0;
-    debug_cmd_print("sending GET_STREAMS cmd.\n");
-    spi_generate_command(spi_send_packet, GET_STREAMS, 1, NOSTREAM);
-    generic_send_spi((char*)spi_send_packet);
-
-    debug_cmd_print("receive GET_STREAMS response from remote device...\n");
-    char recvbuf[BUFF_MAX_SIZE] = {0};
-    uint8_t recv_success = generic_recv_spi(recvbuf);
-
-    if(recv_success){
-        if(recvbuf[0]==START_BYTE_MAGIC){
-            SpiProtocolPacket* spiRecvPacket = spi_protocol_parse(spi_proto_instance, (uint8_t*)recvbuf, sizeof(recvbuf));
-            spi_parse_get_streams_resp(response, spiRecvPacket->data);
-            success = 1;
             
         }else if(recvbuf[0] != 0x00){
             printf("*************************************** got a half/non aa packet ************************************************\n");
@@ -236,11 +213,42 @@ uint8_t SpiApi::spi_pop_message(const char * stream_name){
     return success;
 }
 
+std::vector<std::string> SpiApi::spi_get_streams(){
+    SpiGetStreamsResp response;
+    std::vector<std::string> streams;
+
+    debug_cmd_print("sending GET_STREAMS cmd.\n");
+    spi_generate_command(spi_send_packet, GET_STREAMS, 1, NOSTREAM);
+    generic_send_spi((char*)spi_send_packet);
+
+    debug_cmd_print("receive GET_STREAMS response from remote device...\n");
+    char recvbuf[BUFF_MAX_SIZE] = {0};
+    uint8_t recv_success = generic_recv_spi(recvbuf);
+
+    if(recv_success){
+        if(recvbuf[0]==START_BYTE_MAGIC){
+            SpiProtocolPacket* spiRecvPacket = spi_protocol_parse(spi_proto_instance, (uint8_t*)recvbuf, sizeof(recvbuf));
+            spi_parse_get_streams_resp(&response, spiRecvPacket->data);
+
+            std::string currStr;            
+            for(int i=0; i<response.numStreams; i++){
+                currStr = response.stream_names[i];
+                streams.push_back(currStr);
+            }
+        }else if(recvbuf[0] != 0x00){
+            printf("*************************************** got a half/non aa packet ************************************************\n");
+        }
+    } else {
+        printf("failed to recv packet\n");
+    }
+
+    return streams;
+}
 
 
-
-uint8_t SpiApi::req_data(SpiGetMessageResp *get_message_resp, const char* stream_name){
+uint8_t SpiApi::req_data(Data *requested_data, const char* stream_name){
     uint8_t req_success = 0;
+    SpiGetMessageResp get_message_resp;
 
     // do a get_size before trying to retreive message.
     SpiGetSizeResp get_size_resp;
@@ -249,19 +257,24 @@ uint8_t SpiApi::req_data(SpiGetMessageResp *get_message_resp, const char* stream
 
     // get message (assuming we got size)
     if(req_success){
-        get_message_resp->data = (uint8_t*) malloc(get_size_resp.size);
-        if(!get_message_resp->data){
+        get_message_resp.data = (uint8_t*) malloc(get_size_resp.size);
+        if(!get_message_resp.data){
             printf("failed to allocate %d bytes", get_size_resp.size);
         }
 
-        req_success = spi_get_message(get_message_resp, GET_MESSAGE, stream_name, get_size_resp.size);
+        req_success = spi_get_message(&get_message_resp, GET_MESSAGE, stream_name, get_size_resp.size);
+        if(req_success){
+            requested_data->data = get_message_resp.data;
+            requested_data->size = get_message_resp.data_size;
+        }
     }
 
     return req_success;
 }
 
-uint8_t SpiApi::req_metadata(SpiGetMessageResp *get_message_resp, const char* stream_name){
+uint8_t SpiApi::req_metadata(Metadata *requested_data, const char* stream_name){
     uint8_t req_success = 0;
+    SpiGetMessageResp get_message_resp;
 
     // do a get_size before trying to retreive message.
     SpiGetSizeResp get_size_resp;
@@ -270,12 +283,17 @@ uint8_t SpiApi::req_metadata(SpiGetMessageResp *get_message_resp, const char* st
 
     // get message (assuming we got size)
     if(req_success){
-        get_message_resp->data = (uint8_t*) malloc(get_size_resp.size);
-        if(!get_message_resp->data){
+        get_message_resp.data = (uint8_t*) malloc(get_size_resp.size);
+        if(!get_message_resp.data){
             printf("failed to allocate %d bytes", get_size_resp.size);
         }
 
-        req_success = spi_get_message(get_message_resp, GET_METADATA, stream_name, get_size_resp.size);
+        req_success = spi_get_message(&get_message_resp, GET_METADATA, stream_name, get_size_resp.size);
+        if(req_success){
+            requested_data->data = get_message_resp.data;
+            requested_data->size = get_message_resp.data_size;
+            requested_data->type = (dai::DatatypeEnum) get_message_resp.data_type;
+        }
     }
 
     return req_success;
@@ -284,57 +302,43 @@ uint8_t SpiApi::req_metadata(SpiGetMessageResp *get_message_resp, const char* st
 
 
 
-uint8_t SpiApi::req_full_msg(FullMessage* received_msg, const char* stream_name){
+uint8_t SpiApi::req_message(Message* received_msg, const char* stream_name){
     uint8_t req_success = 0;
     uint8_t req_data_success = 0;
     uint8_t req_meta_success = 0;
+
+    Metadata raw_meta;
+    Data raw_data;
+
 
     // ----------------------------------------
     // example of receiving messages.
     // ----------------------------------------
     // the req_data method allocates memory for the received packet. we need to be sure to free it when we're done with it.
-    req_data_success = req_data(&received_msg->raw_data_resp, stream_name);
+    req_data_success = req_data(&raw_data, stream_name);
 
     // ----------------------------------------
     // example of getting message metadata
     // ----------------------------------------
     // the req_metadata method allocates memory for the received packet. we need to be sure to free it when we're done with it.
-    req_meta_success = req_metadata(&received_msg->raw_meta_resp, stream_name);
+    req_meta_success = req_metadata(&raw_meta, stream_name);
 
     
     if(req_data_success && req_meta_success){
+        received_msg->raw_data = raw_data;
+        received_msg->raw_meta = raw_meta;
+        received_msg->type = raw_meta.type;
         req_success = 1;
     }
 
     return req_success;
 }
 
-void SpiApi::free_full_msg(FullMessage* received_msg){
-    free(received_msg->raw_data_resp.data);
-    free(received_msg->raw_meta_resp.data);
+void SpiApi::free_message(Message* received_msg){
+    free(received_msg->raw_data.data);
+    free(received_msg->raw_meta.data);
 }
 
-void SpiApi::parse_metadata(SpiGetMessageResp *raw_meta_resp){
-    // ----------------------------------------
-    // example of parsing out basic ImgDetection type.
-    // ----------------------------------------
-    switch ((dai::DatatypeEnum) raw_meta_resp->data_type)
-    {
-    case dai::DatatypeEnum::ImgDetections :
-    {
-        dai::RawImgDetections det;
-        dai::parseMessage(raw_meta_resp->data, raw_meta_resp->data_size, det);
-
-        for(const auto& det : det.detections){
-            printf("label: %d, xmin: %f, ymin: %f, xmax: %f, ymax: %f\n", det.label, det.xmin, det.ymin, det.xmax, det.ymax);
-        }
-    }
-    break;
-    
-    default:
-        break;
-    }
-}
 
 
 void SpiApi::set_chunk_packet_cb(void (*passed_chunk_message_cb)(char*, uint32_t, uint32_t)){
