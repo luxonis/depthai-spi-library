@@ -1,39 +1,34 @@
 #ifndef SHARED_SPI_API_H
 #define SHARED_SPI_API_H
 
-#include <assert.h>
-
 #include "spi_messaging.h"
 #include "spi_protocol.h"
 
-#include "SpiPacketParser.hpp"
+#include "depthai-shared/datatype/DatatypeEnum.hpp"
+#include "depthai-shared/datatype/RawBuffer.hpp"
+#include "depthai-shared/datatype/RawImgFrame.hpp"
+#include "depthai-shared/datatype/RawNNData.hpp"
 #include "depthai-shared/datatype/RawImgDetections.hpp"
 
-#define DEBUG_CMD 0
-#define debug_cmd_print(...) \
-    do { if (DEBUG_CMD) fprintf(stderr, __VA_ARGS__); } while (0)
-
-#define DEBUG_MESSAGE_CONTENTS 0
-
-
+namespace dai {
 static const char* NOSTREAM = "";
 
-typedef struct {
+struct Data {
     uint32_t size;
     uint8_t* data;
-} Data;
+};
 
-typedef struct {
+struct Metadata {
     uint32_t size;
     uint8_t* data;
     dai::DatatypeEnum type;
-} Metadata;
+};
 
-typedef struct {
+struct Message {
     Data raw_data;
     Metadata raw_meta;
     dai::DatatypeEnum type;     // exposing type here as well, for easier access.
-} Message;
+};
 
 
 class SpiApi {
@@ -83,11 +78,8 @@ class SpiApi {
 };
 
 
-template<typename T>
-void SpiApi::parse_metadata(Metadata *passed_metadata, T& parsed_return){
-    dai::parseMessage(passed_metadata->data, passed_metadata->size, parsed_return);
-}
 
 
+}  // namespace dai
 
 #endif

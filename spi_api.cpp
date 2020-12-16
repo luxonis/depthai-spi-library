@@ -2,11 +2,25 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include <cassert>
 
 #include "spi_api.hpp"
 
+#include "SpiPacketParser.hpp"
 
+#include "depthai-shared/datatype/DatatypeEnum.hpp"
+#include "depthai-shared/datatype/RawBuffer.hpp"
+#include "depthai-shared/datatype/RawImgFrame.hpp"
+#include "depthai-shared/datatype/RawNNData.hpp"
+#include "depthai-shared/datatype/RawImgDetections.hpp"
 
+#define DEBUG_CMD 0
+#define debug_cmd_print(...) \
+    do { if (DEBUG_CMD) fprintf(stderr, __VA_ARGS__); } while (0)
+
+#define DEBUG_MESSAGE_CONTENTS 0
+
+namespace dai {
 
 void SpiApi::debug_print_hex(uint8_t * data, int len){
     for(int i=0; i<len; i++){
@@ -397,4 +411,25 @@ void SpiApi::chunk_message(const char* stream_name){
         }
     }
 }
+
+
+template<typename T>
+void parseMessage(uint8_t* metaPointer, int metaLength, T& obj){
+    nlohmann::json jser = nlohmann::json::from_msgpack(metaPointer, metaPointer + (metaLength));
+    nlohmann::from_json(jser, obj);
+}
+
+template<typename T>
+void SpiApi::parse_metadata(Metadata *passed_metadata, T& parsed_return){
+    dai::parseMessage(passed_metadata->data, passed_metadata->size, parsed_return);
+}
+
+// Explicit template instantiation
+template void SpiApi::parse_metadata(Metadata *passed_metadata, dai::RawNNData& parsed_return);
+template void SpiApi::parse_metadata(Metadata *passed_metadata, dai::RawImgFrame& parsed_return);
+template void SpiApi::parse_metadata(Metadata *passed_metadata, dai::RawImgDetections& parsed_return);
+
+
+
+}  // namespace dai
 
