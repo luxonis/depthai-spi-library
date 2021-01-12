@@ -27,9 +27,11 @@ typedef enum{
     // SpiGetStreamsResp commands
     GET_STREAMS
 } spi_command;
-
 static const spi_command GET_SIZE_CMDS[] = {GET_SIZE, GET_METASIZE};
 static const spi_command GET_MESS_CMDS[] = {GET_MESSAGE, GET_METADATA};
+
+static const int SPI_MSG_SUCCESS_RESP = 0;
+static const int SPI_MSG_FAIL_RESP = 1;
 
 typedef struct {
     uint16_t total_size;
