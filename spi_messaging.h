@@ -19,6 +19,7 @@ typedef enum{
     // SpiGetMessageResp commands
     GET_MESSAGE,
     GET_METADATA,
+    GET_MESSAGE_PART,
 
     // SpiStatusResp commands
     POP_MESSAGES,
@@ -37,6 +38,8 @@ typedef struct {
     uint16_t total_size;
     uint8_t cmd;
     uint8_t stream_name_len;
+    uint32_t offset;
+    uint32_t offset_size;
     char stream_name[MAX_STREAMNAME];
 } SpiCmdMessage;
 

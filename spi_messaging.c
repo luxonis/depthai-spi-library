@@ -84,6 +84,8 @@ void spi_generate_command(SpiProtocolPacket* spiPacket, spi_command command, uin
     spi_message.total_size = sizeof(spi_message.total_size) + sizeof(command) + sizeof(stream_name_len) + stream_name_len;
     spi_message.cmd = command;
     spi_message.stream_name_len = stream_name_len;
+    spi_message.offset = 0;
+    spi_message.offset_size = 0;
     strncpy(spi_message.stream_name, stream_name, stream_name_len);
 
     spi_protocol_write_packet(spiPacket, (uint8_t*) &spi_message, spi_message.total_size);
@@ -102,6 +104,14 @@ void spi_parse_command(SpiCmdMessage* parsed_message, uint8_t* data){
     // read stream_name_len - 1 byte
     parsed_message->stream_name_len = *currPtr;
     currPtr++;
+
+    // read offset - 4 bytes
+    parsed_message->offset = *currPtr;
+    currPtr = currPtr+4;
+
+    // read offset_size - 4 bytes
+    parsed_message->offset_size = *currPtr;
+    currPtr = currPtr+4;
 
     // read streamName - up to 16 bytes
     assert(parsed_message->stream_name_len <= MAX_STREAMNAME);
