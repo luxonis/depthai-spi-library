@@ -164,6 +164,10 @@ void spi_parse_get_message(SpiGetMessageResp* parsedResp, uint32_t size, spi_com
             parsedResp->data_type = read_uint32(&parsedResp->data[size]-2*sizeof(uint32_t));
             parsedResp->data_size = read_uint32(&parsedResp->data[size]-sizeof(uint32_t));      // use the size at the end of this message, it chops off the extra bytes for type and message size.
         } break;
+        case GET_MESSAGE_PART: {
+            parsedResp->data_type = 0;      //currently unused.
+            parsedResp->data_size = size;
+        } break;
         default: {
             printf("Warning: Unsupported spi_command passed to %s.", __func__);
         }break;
