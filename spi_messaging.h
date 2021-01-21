@@ -29,7 +29,7 @@ typedef enum{
     GET_STREAMS
 } spi_command;
 static const spi_command GET_SIZE_CMDS[] = {GET_SIZE, GET_METASIZE};
-static const spi_command GET_MESS_CMDS[] = {GET_MESSAGE, GET_METADATA};
+static const spi_command GET_MESS_CMDS[] = {GET_MESSAGE, GET_METADATA, GET_MESSAGE_PART};
 
 static const int SPI_MSG_SUCCESS_RESP = 0;
 static const int SPI_MSG_FAIL_RESP = 1;
@@ -66,6 +66,7 @@ uint8_t isGetSizeCmd(spi_command cmd);
 uint8_t isGetMessageCmd(spi_command cmd);
 
 void spi_generate_command(SpiProtocolPacket* spiPacket, spi_command command, uint8_t streamNameLen, const char* streamName);
+void spi_generate_command_partial(SpiProtocolPacket* spiPacket, spi_command command, uint8_t stream_name_len, const char* stream_name, uint32_t offset, uint32_t offset_size);
 void spi_parse_command(SpiCmdMessage* message, uint8_t* data);
 
 void spi_parse_get_size_resp(SpiGetSizeResp* parsedResp, uint8_t* data);

@@ -91,6 +91,22 @@ void spi_generate_command(SpiProtocolPacket* spiPacket, spi_command command, uin
     spi_protocol_write_packet(spiPacket, (uint8_t*) &spi_message, spi_message.total_size);
 }
 
+void spi_generate_command_partial(SpiProtocolPacket* spiPacket, spi_command command, uint8_t stream_name_len, const char* stream_name, uint32_t offset, uint32_t offset_size){
+    SpiCmdMessage spi_message;
+
+    assert(stream_name_len <= MAX_STREAMNAME);
+
+    spi_message.total_size = sizeof(spi_message.total_size) + sizeof(command) + sizeof(stream_name_len) + stream_name_len;
+    spi_message.cmd = command;
+    spi_message.stream_name_len = stream_name_len;
+    spi_message.offset = offset;
+    spi_message.offset_size = offset_size;
+    strncpy(spi_message.stream_name, stream_name, stream_name_len);
+
+    spi_protocol_write_packet(spiPacket, (uint8_t*) &spi_message, spi_message.total_size);
+}
+
+
 void spi_parse_command(SpiCmdMessage* parsed_message, uint8_t* data){
     uint8_t* currPtr = data;
     // read total_size - 2 bytes
