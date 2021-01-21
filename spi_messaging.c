@@ -81,7 +81,7 @@ void spi_generate_command(SpiProtocolPacket* spiPacket, spi_command command, uin
 
     assert(stream_name_len <= MAX_STREAMNAME);
 
-    spi_message.total_size = sizeof(spi_message.total_size) + sizeof(command) + sizeof(stream_name_len) + stream_name_len;
+    spi_message.total_size = sizeof(spi_message.total_size) + sizeof(command) + sizeof(stream_name_len) + sizeof(spi_message.offset) + sizeof(spi_message.offset_size) + stream_name_len;
     spi_message.cmd = command;
     spi_message.stream_name_len = stream_name_len;
     spi_message.offset = 0;
@@ -96,7 +96,7 @@ void spi_generate_command_partial(SpiProtocolPacket* spiPacket, spi_command comm
 
     assert(stream_name_len <= MAX_STREAMNAME);
 
-    spi_message.total_size = sizeof(spi_message.total_size) + sizeof(command) + sizeof(stream_name_len) + stream_name_len;
+    spi_message.total_size = sizeof(spi_message.total_size) + sizeof(command) + sizeof(stream_name_len) + sizeof(spi_message.offset) + sizeof(spi_message.offset_size) + stream_name_len;
     spi_message.cmd = command;
     spi_message.stream_name_len = stream_name_len;
     spi_message.offset = offset;
@@ -122,11 +122,11 @@ void spi_parse_command(SpiCmdMessage* parsed_message, uint8_t* data){
     currPtr++;
 
     // read offset - 4 bytes
-    parsed_message->offset = *currPtr;
+    parsed_message->offset = read_uint32(currPtr);
     currPtr = currPtr+4;
 
     // read offset_size - 4 bytes
-    parsed_message->offset_size = *currPtr;
+    parsed_message->offset_size = read_uint32(currPtr);
     currPtr = currPtr+4;
 
     // read streamName - up to 16 bytes
@@ -169,3 +169,4 @@ void spi_parse_get_message(SpiGetMessageResp* parsedResp, uint32_t size, spi_com
         }break;
     }
 }
+
