@@ -17,8 +17,8 @@
 
 
 uint8_t is_little_endian(){
-    uint16_t i = 1;  
-    char *c = (char*)&i;  
+    uint16_t i = 1;
+    char *c = (char*)&i;
     return (*c) ? 1 : 0;
 }
 
@@ -60,7 +60,7 @@ uint8_t isGetSizeCmd(spi_command cmd){
     for(size_t i=0; i < sizeof(GET_SIZE_CMDS) / sizeof(GET_SIZE_CMDS[0]); i++){
         if(cmd == GET_SIZE_CMDS[i]){
             result = 1;
-        }        
+        }
     }
     return result;
 }
@@ -106,7 +106,7 @@ void spi_generate_command_partial(SpiProtocolPacket* spiPacket, spi_command comm
     spi_protocol_write_packet(spiPacket, (uint8_t*) &spi_message, spi_message.total_size);
 }
 
-void spi_generate_command_send(SpiProtocolPacket* spiPacket, spi_command command, uint8_t stream_name_len, const char* stream_name, uint32_t send_data_size){
+void spi_generate_command_send(SpiProtocolPacket* spiPacket, spi_command command, uint8_t stream_name_len, const char* stream_name, uint32_t metadata_size, uint32_t send_data_size){
     SpiCmdMessage spi_message;
 
     assert(stream_name_len <= MAX_STREAMNAME);
@@ -116,6 +116,7 @@ void spi_generate_command_send(SpiProtocolPacket* spiPacket, spi_command command
     spi_message.stream_name_len = stream_name_len;
     spi_message.extra_offset = 0;
     spi_message.extra_size = send_data_size;
+    spi_message.metadata_size = metadata_size;
     strncpy(spi_message.stream_name, stream_name, stream_name_len);
 
     spi_protocol_write_packet(spiPacket, (uint8_t*) &spi_message, spi_message.total_size);
@@ -141,6 +142,10 @@ void spi_parse_command(SpiCmdMessage* parsed_message, uint8_t* data){
 
     // read extra_size - 4 bytes
     parsed_message->extra_size = read_uint32(currPtr);
+    currPtr = currPtr+4;
+
+    // read metadata_size - 4 bytes
+    parsed_message->metadata_size = read_uint32(currPtr);
     currPtr = currPtr+4;
 
     // read streamName - up to 16 bytes
