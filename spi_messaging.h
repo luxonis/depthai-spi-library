@@ -26,7 +26,9 @@ typedef enum{
     POP_MESSAGE,
 
     // SpiGetStreamsResp commands
-    GET_STREAMS
+    GET_STREAMS,
+
+    SEND_DATA
 } spi_command;
 static const spi_command GET_SIZE_CMDS[] = {GET_SIZE, GET_METASIZE};
 static const spi_command GET_MESS_CMDS[] = {GET_MESSAGE, GET_METADATA, GET_MESSAGE_PART};
@@ -38,14 +40,15 @@ typedef struct {
     uint16_t total_size;
     uint8_t cmd;
     uint8_t stream_name_len;
-    uint32_t offset;
-    uint32_t offset_size;
+    uint32_t extra_offset;
+    uint32_t extra_size;
+    uint32_t metadata_size;
     char stream_name[MAX_STREAMNAME];
 } SpiCmdMessage;
 
 typedef struct {
     uint32_t size;
-} SpiGetSizeResp; 
+} SpiGetSizeResp;
 
 typedef struct {
     uint32_t data_type;
@@ -59,7 +62,7 @@ typedef struct {
 
 typedef struct {
     uint8_t numStreams;
-    char stream_names[MAX_STREAMS][MAX_STREAMNAME]; 
+    char stream_names[MAX_STREAMS][MAX_STREAMNAME];
 } SpiGetStreamsResp;
 
 uint8_t isGetSizeCmd(spi_command cmd);
@@ -67,6 +70,7 @@ uint8_t isGetMessageCmd(spi_command cmd);
 
 void spi_generate_command(SpiProtocolPacket* spiPacket, spi_command command, uint8_t streamNameLen, const char* streamName);
 void spi_generate_command_partial(SpiProtocolPacket* spiPacket, spi_command command, uint8_t stream_name_len, const char* stream_name, uint32_t offset, uint32_t offset_size);
+void spi_generate_command_send(SpiProtocolPacket* spiPacket, spi_command command, uint8_t stream_name_len, const char* stream_name, uint32_t metadata_size, uint32_t send_data_size);
 void spi_parse_command(SpiCmdMessage* message, uint8_t* data);
 
 void spi_parse_get_size_resp(SpiGetSizeResp* parsedResp, uint8_t* data);

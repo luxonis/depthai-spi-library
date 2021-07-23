@@ -41,7 +41,7 @@ static SpiProtocolPacket* switch_current_packet(SpiProtocolInstance* instance){
     return instance->packet + instance->currentPacketIndex;
 }
 
-static int is_packet_ok(SpiProtocolPacket* packet){
+static int is_packet_ok(const SpiProtocolPacket* packet){
 
     if(packet->start != START_BYTE_MAGIC){
         return 0;
@@ -49,11 +49,11 @@ static int is_packet_ok(SpiProtocolPacket* packet){
 
     // Get CRC and compare with payload crc
     uint16_t crc = (packet->crc[0] & 0xFF) | ((((uint16_t) packet->crc[1]) << 8) & 0xFF00);
-    
+
     // Calculated crc
     uint16_t crc_calculated = crc_16(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
 
-    // Compare 
+    // Compare
     if(crc != crc_calculated){
         return 0;
     }
@@ -84,7 +84,7 @@ void spi_protocol_init(SpiProtocolInstance *instance){
 *
 *  returns: SpiProtocolPacket pointer, NULL if packet wasn't parsed
 */
-SpiProtocolPacket* spi_protocol_parse(SpiProtocolInstance* instance, uint8_t* buffer, int size){
+SpiProtocolPacket* spi_protocol_parse(SpiProtocolInstance* instance, const uint8_t* buffer, int size){
 
     // max bytes to parse: SPI_PROTOCOL_PAYLOAD_SIZE
     assert(size >= 0 && size <= (int) sizeof(SpiProtocolPacket));
@@ -106,7 +106,7 @@ SpiProtocolPacket* spi_protocol_parse(SpiProtocolInstance* instance, uint8_t* bu
                 if(curByte == START_BYTE_MAGIC){
                     packet->start = curByte;
                     instance->state = STATE_RX_PAYLOAD;
-                }   
+                }
             }
             break;
 
@@ -125,7 +125,7 @@ SpiProtocolPacket* spi_protocol_parse(SpiProtocolInstance* instance, uint8_t* bu
 
                 // Assert: payload offset must be less or equal than actual payload size
                 assert(instance->payloadOffset <= SPI_PROTOCOL_PAYLOAD_SIZE);
-                
+
                 // if payloadOffset is at the end, whole packet was read, change state
                 if(instance->payloadOffset == SPI_PROTOCOL_PAYLOAD_SIZE){
                     instance->state = STATE_RX_TAIL_CRC_0;
@@ -149,29 +149,29 @@ SpiProtocolPacket* spi_protocol_parse(SpiProtocolInstance* instance, uint8_t* bu
                 instance->state = STATE_RX_TAIL_END;
             }
             break;
-            
+
 
             case STATE_RX_TAIL_END:
             {
                 packet->end = curByte;
-                
+
                 // This is the end of the current packet, check if packet is okay
                 if(is_packet_ok(packet)){
-                    
+
                     // Increment packet count
                     packetCount++;
 
                     // Switch to other packet
                     packet = switch_current_packet(instance);
-                    
+
                 }
 
-                // Jump to beginning state 
+                // Jump to beginning state
                 instance->state = STATE_RX_HEADER;
 
             }
             break;
-            
+
             default:
                 // if any other value is in state variable, instance wasn't initialized properly
                 assert(false);
@@ -180,7 +180,7 @@ SpiProtocolPacket* spi_protocol_parse(SpiProtocolInstance* instance, uint8_t* bu
     }
 
     if(packetCount > 0){
-        return get_parsed_packet(instance); 
+        return get_parsed_packet(instance);
     } else {
         return NULL;
     }
@@ -193,17 +193,17 @@ SpiProtocolPacket* spi_protocol_parse(SpiProtocolInstance* instance, uint8_t* bu
 * payload_buffer - Input buffer with payload data
 * Returns: 0 OK, -1 packet is NULL, -2 payload_buffer is NULL
 */
-int spi_protocol_write_packet(SpiProtocolPacket* packet, uint8_t* payload_buffer, int size){
+int spi_protocol_write_packet(SpiProtocolPacket* packet, const uint8_t* payload_buffer, int size){
     if(packet == NULL){
         return SPI_PROTOCOL_PACKET_NULL;
     }
     if(payload_buffer == NULL){
         return SPI_PROTOCOL_PAYLOAD_BUFFER_NULL;
-    } 
-    
+    }
+
     // Start byte
     packet->start = START_BYTE_MAGIC;
-    
+
     // Payload
     memcpy(packet->data, payload_buffer, size);
     // Zero out the rest of buffer
@@ -211,13 +211,13 @@ int spi_protocol_write_packet(SpiProtocolPacket* packet, uint8_t* payload_buffer
 
     uint16_t crc = crc_16(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
 
-    // CRC - little endian 
+    // CRC - little endian
     packet->crc[0] = crc & 0xFF;
     packet->crc[1] = ((crc >> 8) & 0xFF);
 
-    // End byte    
+    // End byte
     packet->end = END_BYTE_MAGIC;
-    
+
     return SPI_PROTOCOL_OK;
 }
 
@@ -227,20 +227,20 @@ int spi_protocol_write_packet(SpiProtocolPacket* packet, uint8_t* payload_buffer
 * payload_buffer2 - Second input buffer with payload data
 * Returns: 0 OK, -1 packet is NULL, -2 payload_buffer is NULL
 */
-int spi_protocol_write_packet2(SpiProtocolPacket* packet, uint8_t* payload_buffer1, uint8_t* payload_buffer2, int size1, int size2){
+int spi_protocol_write_packet2(SpiProtocolPacket* packet, const uint8_t* payload_buffer1, const uint8_t* payload_buffer2, int size1, int size2){
     if(packet == NULL){
         return SPI_PROTOCOL_PACKET_NULL;
     }
     if(payload_buffer1 == NULL){
         return SPI_PROTOCOL_PAYLOAD_BUFFER_NULL;
-    } 
+    }
     if(payload_buffer2 == NULL){
         return SPI_PROTOCOL_PAYLOAD_BUFFER_NULL;
-    } 
-    
+    }
+
     // Start byte
     packet->start = START_BYTE_MAGIC;
-    
+
     // Payload
     memcpy(packet->data, payload_buffer1, size1);
     memcpy(packet->data + size1, payload_buffer2, size2);
@@ -249,13 +249,13 @@ int spi_protocol_write_packet2(SpiProtocolPacket* packet, uint8_t* payload_buffe
 
     uint16_t crc = crc_16(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
 
-    // CRC - little endian 
+    // CRC - little endian
     packet->crc[0] = crc & 0xFF;
     packet->crc[1] = ((crc >> 8) & 0xFF);
 
-    // End byte    
+    // End byte
     packet->end = END_BYTE_MAGIC;
-    
+
     return SPI_PROTOCOL_OK;
 }
 
@@ -273,14 +273,14 @@ int spi_protocol_inplace_packet(SpiProtocolPacket* packet){
 
     // Calculate CRC
     uint16_t crc = crc_16(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
-    
-    // CRC - little endian 
+
+    // CRC - little endian
     packet->crc[0] = crc & 0xFF;
     packet->crc[1] = ((crc >> 8) & 0xFF);
 
-    // End byte    
+    // End byte
     packet->end = END_BYTE_MAGIC;
-    
+
     return SPI_PROTOCOL_OK;
 
 }
