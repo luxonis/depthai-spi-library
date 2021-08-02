@@ -1,19 +1,45 @@
-/*
- * spi_protocol.c
- *
- *  Created on: Mar 31, 2020
- *      Author: TheMarpe - Martin Peterlin
- *
- */
+#include <depthai/spi/messaging.h>
 
-#include <spi_messaging.h>
-#include <spi_protocol.h>
-
+// std
 #include <string.h>
 #include <math.h>
 #include <assert.h>
-
 #include <stdio.h>
+
+// Checksum calculation
+uint32_t depthai_spi_compute_checksum_prev(const void* buffer, uint32_t size, uint32_t prev_checksum) {
+    uint32_t checksum = prev_checksum;
+    uint8_t* p = (uint8_t*)buffer;
+
+    for(unsigned int i = 0; i < size; i++) {
+        checksum = ((checksum << 5) + checksum) + p[i]; /* hash * 33 + p[i] */
+    }
+
+    return checksum;
+}
+
+uint32_t depthai_spi_compute_checksum(const void* buffer, uint32_t size) {
+    return depthai_spi_compute_checksum_prev(buffer, size, depthai_spi_initial_checksum());
+}
+
+// Commands
+
+// Takes 'message' pointer and assumes its depthai_spi_base_message, and applies correct checksum for it
+void depthai_spi_finalize_message(void* message, depthai_spi_command command){
+    depthai_spi_base_message* msg = (depthai_spi_base_message*) message;
+    msg->command = command;
+    cmd->checksum = depthai_spi_compute_checksum(&cmd->command, DEPTHAI_SPI_DEFAULT_MESSAGE_SIZE - sizeof(msg->checksum));
+}
+
+// Creates a message
+depthai_spi_message depthai_spi_create_message(depthai_spi_command command){
+    // Create a clear msg
+    depthai_spi_message msg = {0};
+    // finalize with specified command
+    depthai_spi_finalize_message(msg, command);
+    return msg;
+}
+
 
 
 uint8_t is_little_endian(){
