@@ -18,7 +18,6 @@ typedef enum{
 
     // SpiGetMessageResp commands
     GET_MESSAGE,
-    GET_MESSAGE_FAST,
     GET_METADATA,
     GET_MESSAGE_PART,
 
@@ -29,7 +28,10 @@ typedef enum{
     // SpiGetStreamsResp commands
     GET_STREAMS,
 
-    SEND_DATA
+    // Sends message
+    SEND_DATA,
+    // Gets messag fast (TODO)
+    GET_MESSAGE_FAST,
 } spi_command;
 static const spi_command GET_SIZE_CMDS[] = {GET_SIZE, GET_METASIZE};
 static const spi_command GET_MESS_CMDS[] = {GET_MESSAGE, GET_METADATA, GET_MESSAGE_PART};
