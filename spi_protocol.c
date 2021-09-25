@@ -51,7 +51,7 @@ static int is_packet_ok(const SpiProtocolPacket* packet){
     uint16_t crc = (packet->crc[0] & 0xFF) | ((((uint16_t) packet->crc[1]) << 8) & 0xFF00);
 
     // Calculated crc
-    uint16_t crc_calculated = crc_16(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
+    uint16_t crc_calculated = crc_modbus(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
 
     // Compare
     if(crc != crc_calculated){
@@ -209,7 +209,7 @@ int spi_protocol_write_packet(SpiProtocolPacket* packet, const uint8_t* payload_
     // Zero out the rest of buffer
     memset(packet->data + size, 0, SPI_PROTOCOL_PAYLOAD_SIZE - size);
 
-    uint16_t crc = crc_16(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
+    uint16_t crc = crc_modbus(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
 
     // CRC - little endian
     packet->crc[0] = crc & 0xFF;
@@ -247,7 +247,7 @@ int spi_protocol_write_packet2(SpiProtocolPacket* packet, const uint8_t* payload
     // Zero out the rest of buffer
     memset(packet->data + size1 + size2, 0, SPI_PROTOCOL_PAYLOAD_SIZE - (size1 + size2));
 
-    uint16_t crc = crc_16(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
+    uint16_t crc = crc_modbus(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
 
     // CRC - little endian
     packet->crc[0] = crc & 0xFF;
@@ -272,7 +272,7 @@ int spi_protocol_inplace_packet(SpiProtocolPacket* packet){
     packet->start = START_BYTE_MAGIC;
 
     // Calculate CRC
-    uint16_t crc = crc_16(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
+    uint16_t crc = crc_modbus(packet->data, SPI_PROTOCOL_PAYLOAD_SIZE);
 
     // CRC - little endian
     packet->crc[0] = crc & 0xFF;
