@@ -30,7 +30,7 @@ typedef enum{
 
     // Sends message
     SEND_DATA,
-    // Gets messag fast (TODO)
+    // Gets message fast (TODO)
     GET_MESSAGE_FAST,
 } spi_command;
 static const spi_command GET_SIZE_CMDS[] = {GET_SIZE, GET_METASIZE};
